@@ -18,6 +18,7 @@ from message_parser import message_parser
 import logs
 from client import Client
 from database.db_connector import DBConnector
+from message_types import TYPE_KICK
 
 IP_SERVER = socket.gethostbyname(socket.gethostname())
 PORT_SERVER = 11000
@@ -323,6 +324,28 @@ class Server:
             logs.print_notice(f"Unknown argument \"{argv}\". Type \"clients [--help / -h]\" to show arguments list")
 
 
+    def client_kick(self, user_id: str, message: str="") -> None:
+        """
+        Выводит пользователя из акаунта.
+        Принимает ID пользователя, опционально: сообщение.
+        """
+        client = self.active_clients.get_client_by_id(user_id)
+
+        if client is not None:
+            message = {
+                "type": TYPE_KICK,
+                "message": message
+            }
+
+        data = json.dumps(message) + "\n"
+        self.send_message(data, user_id)
+
+        client.logout()
+        self.active_clients.remove_client(client.user_socket)
+        self.active_clients.add_client(client.user_socket, client)
+        logs.print_notice(f"User {user_id} have been logged out")
+
+
 def main() -> None:
     server = Server(IP_SERVER, PORT_SERVER)
 
@@ -353,6 +376,20 @@ def main() -> None:
         elif command == "staccept":
             server.create_accepting_thread()
 
+        # Вывод из аккаунта пользователя
+        elif parts[0] == "kick":
+            if len(parts) == 1:
+                logs.print_kick_help_message()
+            
+            if len(parts) == 2:
+                user_id = parts[1]
+                server.client_kick(user_id)
+
+            if len(parts) >= 3:
+                user_id = parts[1]
+                message = parts[2:]
+                server.client_kick(user_id, "".join(message))
+            
         # Вывод списка команд
         elif command == "help":
             logs.print_server_help()

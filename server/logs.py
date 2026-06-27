@@ -39,6 +39,22 @@ def print_clients_list_help_message() -> None:
     print(help_message)
 
 
+def print_kick_help_message() -> None:
+    """
+    Вывод списка команд для команды "kick".
+    """
+    help_message = """
+        kick [user_id] [argv]
+        
+        arguments list:
+        -----------------------------------------------
+        1) [-m / --message] [message] : kick user with sending message.
+        2) [-nm / --nomessage] : kick user without message
+        3) [-h / --help] : show arguments list.
+    """
+    print(help_message)
+
+
 def print_start_server_help() -> None:
     """
     Вывод списка команд для запуска сервера.

@@ -5,7 +5,7 @@
 """
 
 import json
-from message_types import TYPE_SEND, TYPE_LOGIN, TYPE_REGISTR, TYPE_DELETE_USER, TYPE_CHANGE_PASSWORD, TYPE_LOGOUT
+from message_types import TYPE_SEND, TYPE_LOGIN, TYPE_REGISTR, TYPE_DELETE_USER, TYPE_CHANGE_PASSWORD, TYPE_LOGOUT, TYPE_KICK
 import logs
 
 def print_message(packet: dict, client) -> None:
@@ -66,3 +66,8 @@ def message_parser(packet: dict, client) -> None:
         else:
             logs.print_error("Couldn't logged out")
             print("> ", end="", flush=True)
+
+    elif packet["type"] == TYPE_KICK:
+        logs.print_notice(f"You have been logged out\n{packet["message"]}")
+        client.set_login(False)
+        print("> ", end="", flush=True)

@@ -120,15 +120,15 @@ def registr_message(packet: dict, client: Client, server) -> None:
     username = packet.get("username")
     auth = Authorization(client)
 
-    result = auth.registration_user(user_id, password, username, server.db)
-
-    if len(user_id) >= 30 or len(password) >= 30:
+    if len(user_id) > 30 or len(password) > 30 or len(username) > 50:
         registr_answer_send(result, client, server)
         return
  
     if not user_id or not password or not username:
         registr_answer_send(result, client, server)
         return
+
+    result = auth.registration_user(user_id, password, username, server.db)
 
     if result:
         logs.print_notice(f"{user_id} registrated successful")

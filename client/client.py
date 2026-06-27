@@ -174,6 +174,10 @@ class Client:
         """
         Отправляет сообщение указанному клиенту.
         """
+        if len(message) > 300:
+            logs.print_notice("The maximum number of characters in a message is 300")
+            return
+
         if self.is_connected and self.is_login:
             try:
                 message_sender.message_to_user(self.socket, user_id, message)
@@ -193,6 +197,14 @@ class Client:
         Отправляет сообщение в данными для входа.
         Принимает ID пользователя и его пароль.
         """
+        if len(password) > 30:
+            logs.print_notice("The maximum password length is 30")
+            return
+
+        if len(user_id) > 30:
+            logs.print_notice("The maximum user id length is 30")
+            return
+            
         if self.is_connected:
             try:
                 message_sender.login_message(self.socket, password, user_id)
@@ -227,6 +239,18 @@ class Client:
         Отправляет сообщение c данными для регистрации.
         Принимает ID пользователя, имя и его пароль.
         """
+        if len(password) > 30:
+            logs.print_notice("The maximum password length is 30")
+            return
+
+        if len(user_id) > 30:
+            logs.print_notice("The maximum user id length is 30")
+            return
+
+        if len(username) > 50:
+            logs.print_notice("The maximum username length is 50")
+            return
+
         if self.is_connected:
             try:
                 message_sender.registr_message(self.socket, user_id, username, password)
@@ -243,6 +267,10 @@ class Client:
         Отправляет сообщение с новым паролем для миены пароля.
         Принимает новый пароль пароль.
         """
+        if len(password) > 30:
+            logs.print_notice("The maximum password length is 30")
+            return
+            
         if self.is_connected and self.is_login:
             try:
                 message_sender.change_password_message(self.socket, new_password)
@@ -374,17 +402,25 @@ def main() -> None:
             
         # Отправка сообщения клиенту    
         elif parts[0] == "send":
-            user_id = parts[1]
-            message_list = parts[2:]
-            message = " ".join(message_list)
-            client.send_message(user_id, message)
+            if len(parts) < 3:
+                logs.print_client_help()
+                
+            if len(parts) >= 3:
+                user_id = parts[1]
+                message_list = parts[2:]
+                message = " ".join(message_list)
+                client.send_message(user_id, message)
 
         # Авторизация   
         elif parts[0] == "login":
-            user_id = parts[1]
-            password_list = parts[2:]
-            password = " ".join(password_list)
-            client.login_message(user_id, password)
+            if len(parts) < 3:
+                logs.print_client_help()
+
+            if len(parts) >= 3:
+                user_id = parts[1]
+                password_list = parts[2:]
+                password = " ".join(password_list)
+                client.login_message(user_id, password)
 
         # Выход из аккаунта
         elif command == "logout":
