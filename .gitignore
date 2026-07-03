@@ -3,12 +3,10 @@ __pycache__/
 
 *.db
 
-database/__pycache__/
-*.pyc
-
 *.txt
 
-logs.txt
+logs/
+
 
 doc_client.txt
 
