@@ -9,9 +9,9 @@ import socket
 from threading import Thread
 import sys
 import json
-from queue import Queue
-from queue import Empty
+from queue import Queue, Empty
 import readline
+import time
 
 from clients_list import ActiveClients
 from message_parser import message_parser
@@ -20,8 +20,9 @@ from client import Client
 from database.db_connector import DBConnector
 from message_types import TYPE_KICK
 
-IP_SERVER = socket.gethostbyname(socket.gethostname())
-PORT_SERVER = 11000
+# IP_SERVER = socket.gethostbyname(socket.gethostname())
+IP_SERVER = "0.0.0.0"
+PORT_SERVER = 8080
 
 
 class Server:
@@ -348,58 +349,65 @@ class Server:
 
 def main() -> None:
     server = Server(IP_SERVER, PORT_SERVER)
+    server.start_server("-a")
 
-    while True:
-        command = input("\r> ")
-        parts = command.split()
+    is_interactive = sys.stdin.isatty()
 
-        if not parts:
-            continue
-
-        # Запуск сервера
-        if parts[0] == "start":
-            if len(parts) == 1:
-                parts.append("-a")
-            server.start_server(parts[1])
-            
-        # Остановка сервера
-        elif command == "stop": 
+    if not is_interactive:
+        logs.create_log("Running in non-interactive mode (Docker). Console CLI disabled.", log_type="info")
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
             server.stop_server()
-
-        # Вывод списка подключённых клиентов
-        elif parts[0] == "clients":
-            if len(parts) == 1:
-                parts.append("-c")
-            server.get_clients_list(parts[1])
-
-        # Запустить принятие клиентов
-        elif command == "staccept":
-            server.create_accepting_thread()
-
-        # Вывод из аккаунта пользователя
-        elif parts[0] == "kick":
-            if len(parts) == 1:
-                logs.print_kick_help_message()
-            
-            if len(parts) == 2:
-                user_id = parts[1]
-                server.client_kick(user_id)
-
-            if len(parts) >= 3:
-                user_id = parts[1]
-                message = parts[2:]
-                server.client_kick(user_id, "".join(message))
-            
-        # Вывод списка команд
-        elif command == "help":
-            logs.print_server_help()
-
-        # Завершение программы
-        elif command == "exit":
             sys.exit()
 
-        else:
-            logs.print_notice("Unknown command. Type \"help\" to show commands list.")
+    while True:
+        try:
+            command = input("\r> ")
+            parts = command.split()
+
+            if not parts:
+                continue
+
+            if parts[0] == "start":
+                if len(parts) == 1:
+                    parts.append("-a")
+                server.start_server(parts[1])
+                
+            elif command == "stop": 
+                server.stop_server()
+
+            elif parts[0] == "clients":
+                if len(parts) == 1:
+                    parts.append("-c")
+                server.get_clients_list(parts[1])
+
+            elif command == "staccept":
+                server.create_accepting_thread()
+
+            elif parts[0] == "kick":
+                if len(parts) == 1:
+                    logs.print_kick_help_message()
+                elif len(parts) == 2:
+                    server.client_kick(parts[1])
+                else:
+                    server.client_kick(parts[1], "".join(parts[2:]))
+                
+            elif command == "help":
+                logs.print_server_help()
+
+            elif command == "exit":
+                sys.exit()
+
+            else:
+                logs.print_notice("Unknown command. Type \"help\" to show commands list.")
+        
+        except (EOFError, KeyboardInterrupt):
+            # Защита на случай, если терминал внезапно закрылся
+            server.stop_server()
+            break
+
 
 
 if __name__ == "__main__":

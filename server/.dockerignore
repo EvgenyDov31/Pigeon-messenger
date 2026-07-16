@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.git/
+venv/
+*.db
+
+doc_client.txt
+doc_server.txt
+Documentation.txt

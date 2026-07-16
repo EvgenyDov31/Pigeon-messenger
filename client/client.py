@@ -17,8 +17,8 @@ import message_sender
 from message_parser import message_parser
 import logs
 
-IP_SERVER = "127.0.1.1"
-PORT_SERVER = 11000
+IP_SERVER = "127.0.0.1"
+PORT_SERVER = 8080
 
 class Client:
     """
@@ -53,8 +53,8 @@ class Client:
 
                 logs.print_notice(f"Connection successfully\nServer: \nIP: {self.server_ip} \nPORT: {self.server_port}")
             
-            except:
-                logs.print_error("Failed to connect to server")
+            except Exception as err:
+                logs.print_error(f"Failed to connect to server {str(err)}")
 
 
     def create_buffer_parsing_thread(self) -> None:
@@ -85,6 +85,7 @@ class Client:
         while self.is_connected:
             try:
                 data = self.msg_buffer.get(timeout=1)
+                print(data)
             except Empty:
                 continue
 
@@ -92,7 +93,7 @@ class Client:
                 packet = json.loads(data)
 
             except json.JSONDecodeError as err:
-                logs.print_error(f"Invalid packet")
+                logs.print_error(f"Invalid packet {str(err)}")
                 continue
             
             except Exception as err:
