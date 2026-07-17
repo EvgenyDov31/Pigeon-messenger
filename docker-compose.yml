@@ -4,7 +4,7 @@ services:
   pigeon-server:
     build:
       context: ./server
-    # Открываем порт напрямую наружу: хост-порт 8080 в контейнер-порт 8080
+    
     ports:
       - "8080:8080"
     restart: always

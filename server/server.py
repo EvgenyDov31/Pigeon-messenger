@@ -358,6 +358,7 @@ def main() -> None:
         try:
             while True:
                 time.sleep(1)
+                
         except KeyboardInterrupt:
             server.stop_server()
             sys.exit()
@@ -404,7 +405,6 @@ def main() -> None:
                 logs.print_notice("Unknown command. Type \"help\" to show commands list.")
         
         except (EOFError, KeyboardInterrupt):
-            # Защита на случай, если терминал внезапно закрылся
             server.stop_server()
             break
 

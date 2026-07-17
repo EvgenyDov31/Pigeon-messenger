@@ -85,7 +85,7 @@ class Client:
         while self.is_connected:
             try:
                 data = self.msg_buffer.get(timeout=1)
-                print(data)
+                
             except Empty:
                 continue
 

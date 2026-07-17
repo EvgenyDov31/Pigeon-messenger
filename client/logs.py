@@ -35,9 +35,10 @@ def print_client_help() -> None:
         5) "exit" : exit the program.
         6) "loginStatus" : show login status.
         7) "login [user id] [password]" : log in to accaunt.
-        8) "registration" : registration new accaunt.
-        9) "changePassword" : change accaunt password.
-        10) "deleteAccaunt" : delete accaunt.
+        8) "logout" : log out.
+        9) "registration" : registration new accaunt.
+        10) "changePassword" : change accaunt password.
+        11) "deleteAccaunt" : delete accaunt.
     """
     print(help_message)
 

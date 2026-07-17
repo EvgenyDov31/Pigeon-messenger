@@ -4,25 +4,24 @@
 Модуль управления БД.
 """
 
-import sqlite3
+
+from sqlalchemy import create_engine
+from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import sessionmaker
+
 import logs
+from database.db_models import User, Base
+from database.db_url import DB_URL
+
 
 class DBConnector:
 
     def __init__(self):
-        self.db = sqlite3.connect("database/users.db", check_same_thread=False)
-        self.cursor = self.db.cursor()
-
-        self.cursor.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id TEXT UNIQUE NOT NULL,
-            username TEXT NOT NULL,
-            password_hash TEXT NOT NULL
-        )
-        """)
-
-        self.db.commit()
+        self.engine = create_engine(DB_URL)   
+        self.SessionLocal = sessionmaker(bind=self.engine)
+        self.User = User
+        Base.metadata.create_all(bind=self.engine)
 
 
     def add_new_user(self, user_id: str, username: str, password_hash: str) -> bool:
@@ -31,16 +30,26 @@ class DBConnector:
         Принимает его username и password.
         """
         try:
-            self.cursor.execute(
-                "INSERT INTO users (user_id, username, password_hash) VALUES (?, ?, ?)",
-                (user_id, username, password_hash)
-            )
-            self.db.commit()
+            db = self.SessionLocal()
+
+            new_user = self.User(user_id=user_id, username=username, password_hash=password_hash)
+
+            db.add(new_user)
+            db.commit()
+            # self.cursor.execute(
+            #     "INSERT INTO users (user_id, username, password_hash) VALUES (?, ?, ?)",
+            #     (user_id, username, password_hash)
+            # )
+            # self.db.commit()
             return True
 
         except Exception as err:
+            db.rollback()
             logs.print_error("Couldn't add new user to database", str(err))
             return False
+
+        finally:
+            db.close()
 
 
     def replace_user_password(self, user_id: str, new_password: str) -> bool:
@@ -49,16 +58,22 @@ class DBConnector:
         Принимает user_id и новый пароль пользователя.
         """
         try:
-            self.cursor.execute(
-                "UPDATE users SET password_hash = ? WHERE user_id = ?",
-                (new_password, user_id)
+            db = self.SessionLocal()
+            result = db.query(self.User).filter(self.User.user_id == user_id).update(
+                {self.User.password_hash: new_password},
+                synchronize_session="evaluate" 
             )
-            self.db.commit()
-            return True
+            db.commit()
+
+            return result > 0
 
         except Exception as err:
+            db.rollback()
             logs.print_error("Couldn't change password in database", str(err))
             return False
+
+        finally:
+            db.close()
 
 
     def auth_user(self, user_id: str) -> str | None:
@@ -67,14 +82,10 @@ class DBConnector:
         Возвращает username.
         Принимает его id и пароль.
         """
-
         try:
-            self.cursor.execute(
-                "SELECT username FROM users WHERE user_id = ?",
-                (user_id, )
-            )
+            db = self.SessionLocal()
 
-            result = self.cursor.fetchone()
+            result = db.query(self.User.username).filter(self.User.user_id == user_id).first()
 
             if result:
                 return result[0]
@@ -83,6 +94,10 @@ class DBConnector:
 
         except Exception as err:
             logs.print_error("Couldn't select user in database", str(err))
+            return None
+
+        finally:
+            db.close()
 
 
     def get_user_password(self, user_id: str) -> str | None:
@@ -92,12 +107,9 @@ class DBConnector:
             Принимает id пользователя.
             """
             try:
-                self.cursor.execute(
-                    "SELECT password_hash FROM users WHERE user_id = ?",
-                    (user_id, )
-                )
+                db = self.SessionLocal()
 
-                result = self.cursor.fetchone()
+                result = db.query(self.User.password_hash).filter(self.User.user_id == user_id).first()
 
                 if result:
                     return result[0]
@@ -106,14 +118,27 @@ class DBConnector:
 
             except Exception as err:
                 logs.print_error("Couldn't select user password in database", str(err))
+                return None
+
+            finally:
+                db.close()
 
 
     def user_id_exists(self, user_id: str) -> bool:
-        self.cursor.execute(
-            "SELECT 1 FROM users WHERE user_id = ?",
-            (user_id,)
-        )
-        return self.cursor.fetchone() is not None
+        """
+        Возвращает True, если пользователь с данным ID существует.
+        """
+        try:
+            db = self.SessionLocal()
+            result = db.query(1).filter(self.User.user_id == user_id).first()
+            return result is not None
+
+        except Exception as err:
+            logs.print_error("Couldn't select user in database", str(err))
+            return False
+
+        finally:
+            db.close()
 
 
     def user_exists(self, username: str) -> bool:
@@ -121,12 +146,17 @@ class DBConnector:
         Возвращает True если такой пользователь существует.
         Принимает имя пользователя.
         """
-        self.cursor.execute(
-            "SELECT 1 FROM users WHERE username = ?",
-            (username,)
-        )
+        try:
+            db = self.SessionLocal()
+            result = db.query(1).filter(self.User.username == username).first()
+            return result is not None
+        
+        except Exception as err:
+            logs.print_error("Couldn't select username in database", str(err))
+            return False
 
-        return self.cursor.fetchone() is not None
+        finally:
+            db.close()
 
 
     def delete_user(self, user_id: str) -> bool:
@@ -135,22 +165,16 @@ class DBConnector:
         Принимает ID пользователя.
         """
         try:
-            self.cursor.execute(
-                "DELETE FROM users WHERE user_id = ?",
-                (user_id, )
-            )
+            db = self.SessionLocal()
+            result = db.query(self.User).filter(self.User.user_id == user_id).delete()
+            db.commit()
 
-            self.db.commit()
-
-            return self.cursor.rowcount > 0
+            return result > 0
         
         except Exception as err:
+            db.rollback()
             logs.print_error("Couldn't delete user from DB", str(err))
             return False
 
-
-    def close(self):
-        """
-        Закрывает подключение к БД.
-        """
-        self.db.close()
+        finally:
+            db.close()
