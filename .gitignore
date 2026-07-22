@@ -17,4 +17,5 @@ doc_server.txt
 Documentation.txt
 
 client/
+config.cfg
 *.code-workspace
