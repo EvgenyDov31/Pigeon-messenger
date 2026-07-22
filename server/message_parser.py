@@ -16,7 +16,7 @@ def message_send(packet: dict, client: Client, server) -> None:
     """
     message = {
         "type": TYPE_SEND,
-        "from": client.user_id, # ID отправителя (TODO: username)
+        "from": (client.user_id, client.username), 
         "message": packet["message"]
     }
 

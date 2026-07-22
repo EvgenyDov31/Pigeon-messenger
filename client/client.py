@@ -16,6 +16,7 @@ from queue import Empty
 import message_sender
 from message_parser import message_parser
 import logs
+from config.config import Config
 
 IP_SERVER = "127.0.0.1"
 PORT_SERVER = 8080
@@ -72,7 +73,7 @@ class Client:
             )
             buffer_parsing_thread.start()
             self.buffer_parsing_thread = buffer_parsing_thread
-            logs.print_notice("Start message buffer parsing")
+            # logs.print_notice("Start message buffer parsing")
         
         else:
             logs.print_notice("Client is not connected with server")
@@ -193,7 +194,7 @@ class Client:
             logs.print_error("You are not logged in")
 
 
-    def login_message(self, user_id: str, password: str) -> None: #(TODO)
+    def login_message(self, user_id: str, password: str) -> None:
         """
         Отправляет сообщение в данными для входа.
         Принимает ID пользователя и его пароль.
@@ -333,12 +334,12 @@ class Client:
         self.is_login = is_login
 
 
-    def print_message(self, from_user_ip: str, message: str) -> None:
+    def print_message(self, from_user_ip: str, from_username: str, message: str) -> None:
         """
         Выводит сообщение.
-        Принимает IP отправителя и текст сообщения.
+        Принимает ID, имя отправителя и текст сообщения.
         """
-        print(f"\r[{from_user_ip}]: {message}")
+        print(f"\r[{from_username} -> @{from_user_ip}]: {message}\n")
         print("> ", end="", flush=True)
 
 
@@ -383,7 +384,6 @@ def change_password(client: Client) -> None:
 
 
 def main() -> None:
-    # IP_SERVER = input("Server IP: ")
     client = Client(IP_SERVER, PORT_SERVER)
 
     while True:
@@ -442,6 +442,42 @@ def main() -> None:
         # Вывод статуса авторизации 
         elif command == "loginStatus":
             client.is_user_login()
+
+        # Вывод значения параметра
+        elif parts[0] == "set":
+            if len(parts) != 3:
+                logs.print_client_help()
+            else:
+                param_key = parts[1]
+                param_value = parts[2]
+
+                param_key, param_value = Config.set(param_key, param_value) or (None, None)
+                
+                if param_key and param_value:
+                    print(f"{param_key} = {param_value}")
+                else:
+                    print("Wrong parameter or value")
+
+                if param_key == "AUTO_AUTH" and param_value in ["true", "1"]:
+                    print("Set up an account for automatic login")
+                    user_id = input("Enter user ID: ")
+                    password = input("Enter password: ")
+                    Config.set("PASSWORD", password)
+                    Config.set("USER_ID", user_id)
+
+        # Вывод значения параметра
+        elif parts[0] == "get":
+            if len(parts) != 2:
+                logs.print_client_help()
+            else:
+                param_key = parts[1]
+                param_key, param_value = Config.get(param_key) or (None, None)
+
+                if param_key and param_value:
+                    print(f"{param_key} = {param_value}")
+
+                else:
+                    logs.print_notice("Wrong parameter")
 
         # Вывод всех команд
         elif command == "help":

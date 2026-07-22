@@ -1,9 +1,9 @@
 """
 Консольный месседжер
 
-Pigeon server: 0.4.1
+Pigeon server: 0.4.2
 """
-VERSION = "0.4.1"
+VERSION = "0.4.2"
 
 import socket
 from threading import Thread
@@ -358,7 +358,7 @@ def main() -> None:
         try:
             while True:
                 time.sleep(1)
-                
+
         except KeyboardInterrupt:
             server.stop_server()
             sys.exit()

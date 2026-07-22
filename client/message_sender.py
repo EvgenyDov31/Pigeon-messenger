@@ -123,7 +123,7 @@ def message_to_user(client_socket: socket.socket, user_id: str, message: str) ->
     
     try:
         client_socket.sendall(data.encode())
-        print(f"\r[You]: Send to {user_id}:\n{message}")
+        print(f"\r[You]: Send to {user_id}: {message}")
     
     except:
         logs.print_error("Couldn't send")

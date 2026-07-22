@@ -39,6 +39,8 @@ def print_client_help() -> None:
         9) "registration" : registration new accaunt.
         10) "changePassword" : change accaunt password.
         11) "deleteAccaunt" : delete accaunt.
+        12) "get" [parameter] : outputs the value of parameter.
+        13) "set" [parameter] [value] : sets the value of the parameter.
     """
     print(help_message)
 

@@ -13,8 +13,8 @@ def print_message(packet: dict, client) -> None:
     Формирует json и отправляет сообщение.
     """
     message = packet["message"]
-    from_user_id = packet["from"] # IP получателя
-    client.print_message(from_user_id, message) # Отправка сообщения
+    from_user_id, from_username = packet["from"] # ID и имя получателя
+    client.print_message(from_user_id, from_username, message) # Вывод сообщения сообщения
 
 
 def message_parser(packet: dict, client) -> None:
