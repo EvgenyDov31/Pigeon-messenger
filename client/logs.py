@@ -3,7 +3,7 @@
 
 Модуль вывода сообщений и ошибок.
 """
-VERSION = "0.3.5"
+VERSION = "0.3.7"
 
 def print_error(text: str) -> None:
     """
@@ -43,6 +43,37 @@ def print_client_help() -> None:
         13) "set" [parameter] [value] : sets the value of the parameter.
     """
     print(help_message)
+
+
+def print_hello() -> None:
+    """
+    Вывод приветствия.
+    """
+    RESET = "\033[0m"
+    GRAY = "\033[90m"
+    CYAN = "\033[96m"
+    YELLOW = "\033[93m"
+
+    hello = rf"""
+    {YELLOW}========================================================{RESET}
+    {GRAY}========================================================{RESET}
+    {CYAN}             ____  _
+                |  _ \(_) __ _  ___  ___  _ __
+                | |_) | |/ _` |/ _ \/ _ \| '_ \
+                |  __/| | (_| |  __/ (_) | | | |
+                |_|   |_| \__,|\___|\___/|_| |_|
+                        |___/{RESET}
+    {GRAY}========================================================{RESET}
+    {YELLOW}========================================================{RESET}
+
+    Pigeon Messenger Client
+
+    Version : 0.3.7
+    Author  : Evgeny Dov
+
+    Type "help" for available commands.
+    """
+    print(hello)
 
 
 def create_log(text: str) -> None:

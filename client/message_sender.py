@@ -1,6 +1,5 @@
 """
 Консольный месседжер
-Pigeon
 
 Модуль компановки и отправки сообщений на сервер
 """
@@ -9,6 +8,20 @@ import socket
 import json
 from message_types import TYPE_SEND, TYPE_LOGIN, TYPE_REGISTR, TYPE_DELETE_USER, TYPE_CHANGE_PASSWORD, TYPE_LOGOUT
 import logs
+
+
+def send_packet(socket, packet) -> None:
+    """
+    Отправляет составленный пакет.
+    Принимает сокет клиента и пакет.
+    """
+    data = json.dumps(packet) + "\n"
+    try:
+        socket.sendall(data.encode())
+        logs.print_notice(f"processing...")
+    
+    except:
+        logs.print_error("Couldn't send packet")
 
 
 def registr_message(client_socket: socket.socket, user_id: str, username: str, password: str) -> None:
@@ -22,14 +35,8 @@ def registr_message(client_socket: socket.socket, user_id: str, username: str, p
         "password": password, 
         "username": username
     }
-    data = json.dumps(request) + "\n"
 
-    try:
-        client_socket.sendall(data.encode())
-        print(f"[Notice]: processing...")
-    
-    except:
-        print("[Error]: Couldn't registr")
+    send_packet(client_socket, request)
 
 
 def delete_accaunt_message(client_socket: socket.socket) -> None:
@@ -41,14 +48,7 @@ def delete_accaunt_message(client_socket: socket.socket) -> None:
         "type": TYPE_DELETE_USER
     }
 
-    data = json.dumps(request) + "\n"
-
-    try:
-        client_socket.sendall(data.encode())
-        print(f"[Notice]: processing...")
-    
-    except:
-        print("[Error]: Couldn't delete accaunt")
+    send_packet(client_socket, request)
 
 
 def change_password_message(client_socket: socket.socket, new_password: str) -> None:
@@ -61,14 +61,7 @@ def change_password_message(client_socket: socket.socket, new_password: str) -> 
         "new_password": new_password
     }
 
-    data = json.dumps(request) + "\n"
-
-    try:
-        client_socket.sendall(data.encode())
-        logs.print_notice("processing...")
-    
-    except:
-        logs.print_error("Couldn't change password")
+    send_packet(client_socket, request)
 
 
 def logout_message(client_socket: socket.socket) -> None:
@@ -80,14 +73,7 @@ def logout_message(client_socket: socket.socket) -> None:
         "type": TYPE_LOGOUT
     }
 
-    data = json.dumps(request) + "\n"
-
-    try:
-        client_socket.sendall(data.encode())
-        logs.print_notice("processing...")
-    
-    except:
-        logs.print_error("Couldn't log out")
+    send_packet(client_socket, request)
 
 
 def login_message(client_socket: socket.socket, password: str, user_id: str) -> None:
@@ -98,16 +84,10 @@ def login_message(client_socket: socket.socket, password: str, user_id: str) -> 
     request = {
         "type": TYPE_LOGIN,
         "user_id": user_id,
-        "password": password # Заменить на хешированный пароль!
+        "password": password
     }
-    data = json.dumps(request) + "\n"
 
-    try:
-        client_socket.sendall(data.encode())
-        print(f"[Notice]: processing...")
-    
-    except:
-        print("[Error]: Couldn't login")
+    send_packet(client_socket, request)
 
 
 def message_to_user(client_socket: socket.socket, user_id: str, message: str) -> None:
@@ -119,12 +99,6 @@ def message_to_user(client_socket: socket.socket, user_id: str, message: str) ->
         "to": user_id,
         "message": message
     }
-    data = json.dumps(request) + "\n"
-    
-    try:
-        client_socket.sendall(data.encode())
-        print(f"\r[You]: Send to {user_id}: {message}")
-    
-    except:
-        logs.print_error("Couldn't send")
+
+    send_packet(client_socket, request)
         

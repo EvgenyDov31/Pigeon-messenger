@@ -1,9 +1,9 @@
 """
 Консольный месседжер
 
-Pigeon client: 0.3.5
+Pigeon client: 0.3.7
 """
-VERSION = "0.3.5"
+VERSION = "0.3.7"
 
 import socket
 from threading import Thread
@@ -18,8 +18,33 @@ from message_parser import message_parser
 import logs
 from config.config import Config
 
-IP_SERVER = "127.0.0.1"
-PORT_SERVER = 8080
+IP_SERVER = ""
+PORT_SERVER = ""
+
+MAX_PACKET_SIZE = 4096
+MAX_PASSWORD_LEN = 30
+MAX_USER_ID_LEN = 30
+MAX_USERNAME_LEN = 50
+MAX_MESSAGE_LEN = 300
+
+def set_connection_info() -> None:
+    """
+    Устанавливает IP и PORT сервера для подключения.
+    """
+    global IP_SERVER, PORT_SERVER
+    try:
+        ip_res = Config.get("SERVER_IP")
+        port_res = Config.get("SERVER_PORT")
+        
+        if len(ip_res) > 1 and len(port_res) > 1:
+            IP_SERVER = ip_res[1]
+            PORT_SERVER = int(port_res[1])
+        else:
+            logs.print_error("Config data format is invalid (missing elements)")
+            
+    except (TypeError, KeyError) as err:
+        logs.print_error(f"Couldn't get server IP or port from config")
+
 
 class Client:
     """
@@ -35,7 +60,7 @@ class Client:
         self.is_login = False
         self.msg_buffer = Queue()
         
-    
+
     def connect_to_server(self) -> None:
         """
         Подключение к серверу.
@@ -123,7 +148,7 @@ class Client:
             buffer = ""
             while self.is_connected:
                 try:
-                    data = self.socket.recv(1024)
+                    data = self.socket.recv(4096)
 
                     if not data:
                         logs.print_notice("Lose connection with server")
@@ -132,6 +157,12 @@ class Client:
                         break
 
                     buffer += data.decode()
+
+                    if len(buffer) > MAX_PACKET_SIZE:
+                        logs.print_notice("Lose connection with server. Suspicious packets from the server")
+                        print("> ", end="", flush=True)
+                        self.close_connection()
+                        break
 
                     while "\n" in buffer:
                         message, buffer = buffer.split("\n", 1)
@@ -176,7 +207,7 @@ class Client:
         """
         Отправляет сообщение указанному клиенту.
         """
-        if len(message) > 300:
+        if len(message) > MAX_MESSAGE_LEN:
             logs.print_notice("The maximum number of characters in a message is 300")
             return
 
@@ -199,11 +230,11 @@ class Client:
         Отправляет сообщение в данными для входа.
         Принимает ID пользователя и его пароль.
         """
-        if len(password) > 30:
+        if len(password) > MAX_PASSWORD_LEN:
             logs.print_notice("The maximum password length is 30")
             return
 
-        if len(user_id) > 30:
+        if len(user_id) > MAX_USER_ID_LEN:
             logs.print_notice("The maximum user id length is 30")
             return
             
@@ -241,15 +272,15 @@ class Client:
         Отправляет сообщение c данными для регистрации.
         Принимает ID пользователя, имя и его пароль.
         """
-        if len(password) > 30:
+        if len(password) > MAX_PASSWORD_LEN:
             logs.print_notice("The maximum password length is 30")
             return
 
-        if len(user_id) > 30:
+        if len(user_id) > MAX_USER_ID_LEN:
             logs.print_notice("The maximum user id length is 30")
             return
 
-        if len(username) > 50:
+        if len(username) > MAX_USERNAME_LEN:
             logs.print_notice("The maximum username length is 50")
             return
 
@@ -269,7 +300,7 @@ class Client:
         Отправляет сообщение с новым паролем для миены пароля.
         Принимает новый пароль пароль.
         """
-        if len(password) > 30:
+        if len(new_password) > MAX_PASSWORD_LEN:
             logs.print_notice("The maximum password length is 30")
             return
             
@@ -382,9 +413,43 @@ def change_password(client: Client) -> None:
         client.change_password_message(new_password)
 
 
+def auto_auth(client: Client) -> None:
+    """
+    Автоматический вход в аккаунт.
+    Принимает объект клиента.
+    """
+    password_res = Config.get("PASSWORD")
+    user_id_res = Config.get("USER_ID")
+
+    if not password_res or not user_id_res:
+        return False
+
+    password = password_res[1]
+    user_id = user_id_res[1]
+
+    logs.print_notice(f"Log in as @{user_id}")
+    client.login_message(user_id, password)
+
+
 
 def main() -> None:
+    logs.print_hello()
+    set_connection_info()
     client = Client(IP_SERVER, PORT_SERVER)
+
+    client.connect_to_server()
+    client.start_server_recv()
+
+    auto_auth_config = Config.get("AUTO_AUTH")
+
+    if auto_auth_config:
+        is_auto_auth = auto_auth_config[1]
+    else:
+        is_auto_auth = False
+ 
+    if is_auto_auth == "true":
+        auto_auth(client)
+    
 
     while True:
         command = input("\n> ")
@@ -457,6 +522,9 @@ def main() -> None:
                     print(f"{param_key} = {param_value}")
                 else:
                     print("Wrong parameter or value")
+
+                if param_key in ["SERVER_PORT", "SERVER_PORT"]:
+                    set_connection_info()
 
                 if param_key == "AUTO_AUTH" and param_value in ["true", "1"]:
                     print("Set up an account for automatic login")
